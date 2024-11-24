@@ -17,17 +17,18 @@
 
     events: {
       'click .close-icon': 'closeDetails',
-      'click .year': 'openRelInfo',
-      'click .certification': 'openCert',
-      'click .movie-imdb-link': 'openIMDb',
+      'mousedown .year': 'openRelInfo',
+      'mousedown .certification': 'openCert',
+      'mousedown .movie-imdb-link': 'openIMDb',
       'mousedown .magnet-link': 'openMagnet',
       'mousedown .source-link': 'openSource',
-      'click .tmdb-link': 'openTmdb',
+      'mousedown .tmdb-link': 'openTmdb',
       'click .rating-container': 'switchRating',
-      'click .show-cast': 'showCast',
+      'mousedown .show-cast': 'showCast',
       'click .showall-cast': 'showallCast',
       'click .health-icon': 'resetTorrentHealth',
-      'mousedown .mcover-image': 'clickPoster'
+      'mousedown .mcover-image': 'clickPoster',
+      'mousedown .title': 'copytoclip'
     },
 
     regions: {
@@ -76,7 +77,6 @@
     },
 
     onUpdateTorrentsList: function(lang) {
-      console.log('Update Torrents List: ', lang);
       this.getRegion('TorrentList').empty();
       if (!lang) {
         return;
@@ -95,7 +95,6 @@
     onChangeQuality: function (quality) {
       this.model.set('quality', quality);
       this.toggleSourceLink(quality);
-      win.debug('about to render health button');
       healthButton.render();
     },
 
@@ -106,7 +105,7 @@
         this.icons.getLink(provider, torrent.provider)
             .then((icon) => torrent.icon = icon || '/src/app/images/icons/' + torrent.provider + '.png')
             .catch((error) => { !torrent.icon ? torrent.icon = '/src/app/images/icons/' + torrent.provider + '.png' : null; })
-            .then(() => $('.source-link').html(`<img src="${torrent.icon}" onerror="this.style.display='none'; this.parentElement.style.top='0'; this.parentElement.classList.add('fas', 'fa-link')">`));
+            .then(() => $('.source-link').html(`<img src="${torrent.icon}" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.top='0'; this.parentElement.classList.add('fas', 'fa-link')" onload="this.onerror=null; this.onload=null;">`));
         $('.source-link').show().attr('data-original-title', torrent.source.split('//').pop().split('/')[0]);
       } else {
         $('.source-link').html('');
@@ -134,6 +133,7 @@
         html: true
       });
     },
+
     localizeTexts: function() {
         const locale = this.model.get('locale');
         let title = this.model.get('title');
@@ -151,6 +151,7 @@
         this.model.set('displayTitle', title);
         this.model.set('displaySynopsis', synopsis);
     },
+
     loadComponents: function() {
       // play control
       var playctrl = this.getRegion('PlayControl');
@@ -167,11 +168,11 @@
       var images = this.model.get('images');
       var p =
         this.model.get('image') ||
-        images.poster ||
+        (images ? images.poster : null) ||
         this.model.get('poster') ||
         noimg;
       var b =
-        images.fanart ||
+        (images ? images.fanart : null) ||
         this.model.get('backdrop') ||
         this.model.get('poster') ||
         nobg;
@@ -242,9 +243,9 @@
       !this.model.get('tmdb_id') && movie && movie.id ? this.model.set('tmdb_id', movie.id) : null;
       if (movie && movie.credits && movie.credits.cast && movie.credits.crew && (movie.credits.cast[0] || movie.credits.crew[0])) {
         curSynopsis.old = this.model.get('synopsis');
-        curSynopsis.crew = movie.credits.crew.filter(function (el) {return el.job === 'Director';}).map(function (el) {return '<span>' + el.job + '&nbsp;-&nbsp;</span><span' + (el.profile_path ? ` data-toggle="tooltip" title="<img src='https://image.tmdb.org/t/p/w154${el.profile_path}' class='toolcimg'/>" ` : ' ') + `class="cname" onclick="nw.Shell.openExternal('https://yts.mx/browse-movies/${el.name.replace(/\'/g, ' ').replace(/\ /g, '+')}')" oncontextmenu="nw.Shell.openExternal('https://www.imdb.com/find?s=nm&q=${el.name.replace(/\'/g, ' ').replace(/\ /g, '+')}')">${el.name.replace(/\ /g, '&nbsp;')}</span>`;}).join('&nbsp;&nbsp; ') + '<p class="sline">&nbsp;</p>';
-        curSynopsis.allcast = movie.credits.cast.map(function (el) {return '<span' + (el.profile_path ? ` data-toggle="tooltip" title="<img src='https://image.tmdb.org/t/p/w154${el.profile_path}' class='toolcimg'/>" ` : ' ') + `class="cname" onclick="nw.Shell.openExternal('https://yts.mx/browse-movies/${el.name.replace(/\'/g, ' ').replace(/\ /g, '+')}')" oncontextmenu="nw.Shell.openExternal('https://www.imdb.com/find?s=nm&q=${el.name.replace(/\'/g, ' ').replace(/\ /g, '+')}')">${el.name.replace(/\ /g, '&nbsp;')}</span><span>&nbsp;-&nbsp;${el.character.replace(/\ /g, '&nbsp;')}</span>`;}).join('&nbsp;&nbsp; ') + '<p>&nbsp;</p>';
-        curSynopsis.cast = movie.credits.cast.slice(0,10).map(function (el) {return '<span' + (el.profile_path ? ` data-toggle="tooltip" title="<img src='https://image.tmdb.org/t/p/w154${el.profile_path}' class='toolcimg'/>" ` : ' ') + `class="cname" onclick="nw.Shell.openExternal('https://yts.mx/browse-movies/${el.name.replace(/\'/g, ' ').replace(/\ /g, '+')}')" oncontextmenu="nw.Shell.openExternal('https://www.imdb.com/find?s=nm&q=${el.name.replace(/\'/g, ' ').replace(/\ /g, '+')}')">${el.name.replace(/\ /g, '&nbsp;')}</span><span>&nbsp;-&nbsp;${el.character.replace(/\ /g, '&nbsp;')}</span>`;}).join('&nbsp;&nbsp; ') + (movie.credits.cast.length > 10 ? '&nbsp;&nbsp;&nbsp;<span class="showall-cast">more...</span>' : '') + '<p>&nbsp;</p>';
+        curSynopsis.crew = movie.credits.crew.filter(function (el) {return el.job === 'Director';}).map(function (el) {return '<span>' + el.job + '&nbsp;-&nbsp;</span><span' + (el.profile_path ? ` data-toggle="tooltip" title="<img src='https://image.tmdb.org/t/p/w154${el.profile_path}' class='toolcimg'/>" ` : ' ') + `class="cname" onclick="nw.Shell.openExternal('https://www.imdb.com/find?s=nm&q=${el.name.replace(/\'/g, ' ').replace(/\ /g, '+')}')" oncontextmenu="nw.Shell.openExternal('https://yts.mx/browse-movies/${el.name.replace(/\'/g, ' ').replace(/\ /g, '+')}')">${el.name.replace(/\ /g, '&nbsp;')}</span>`;}).join('&nbsp;&nbsp; ') + '<p class="sline">&nbsp;</p>';
+        curSynopsis.allcast = movie.credits.cast.map(function (el) {return '<span' + (el.profile_path ? ` data-toggle="tooltip" title="<img src='https://image.tmdb.org/t/p/w154${el.profile_path}' class='toolcimg'/>" ` : ' ') + `class="cname" onclick="nw.Shell.openExternal('https://www.imdb.com/find?s=nm&q=${el.name.replace(/\'/g, ' ').replace(/\ /g, '+')}')" oncontextmenu="nw.Shell.openExternal('https://yts.mx/browse-movies/${el.name.replace(/\'/g, ' ').replace(/\ /g, '+')}')">${el.name.replace(/\ /g, '&nbsp;')}</span><span>&nbsp;-&nbsp;${el.character.replace(/\ /g, '&nbsp;')}</span>`;}).join('&nbsp;&nbsp; ') + '<p>&nbsp;</p>';
+        curSynopsis.cast = movie.credits.cast.slice(0,10).map(function (el) {return '<span' + (el.profile_path ? ` data-toggle="tooltip" title="<img src='https://image.tmdb.org/t/p/w154${el.profile_path}' class='toolcimg'/>" ` : ' ') + `class="cname" onclick="nw.Shell.openExternal('https://www.imdb.com/find?s=nm&q=${el.name.replace(/\'/g, ' ').replace(/\ /g, '+')}')" oncontextmenu="nw.Shell.openExternal('https://yts.mx/browse-movies/${el.name.replace(/\'/g, ' ').replace(/\ /g, '+')}')">${el.name.replace(/\ /g, '&nbsp;')}</span><span>&nbsp;-&nbsp;${el.character.replace(/\ /g, '&nbsp;')}</span>`;}).join('&nbsp;&nbsp; ') + (movie.credits.cast.length > 10 ? '&nbsp;&nbsp;&nbsp;<span class="showall-cast">more...</span>' : '') + '<p>&nbsp;</p>';
       }
       // Fallback to english when source and TMDb call in default language that is other than english fail to fetch synopsis
       if (!this.model.get('synopsis') && Settings.language !== 'en') {
@@ -267,24 +268,28 @@
       }
     },
 
-    showCast: function () {
-      if (curSynopsis.vstatus == null) {
-        this.getMetaData();
-      }
-      if (curSynopsis.vstatus === false) {
-        if (curSynopsis.cast !== '') {
-          $('.overview').html(curSynopsis.crew + curSynopsis.cast + curSynopsis.old);
-          $('.show-cast').attr('title', i18n.__('Hide cast')).tooltip('hide').tooltip('fixTitle');
-          $('.overview *').tooltip({html: true, sanitize: false, container: 'body', placement: 'bottom', delay: {show: 200, hide: 0}, template: '<div class="tooltip" style="opacity:1"><div class="tooltip-inner" style="background-color:rgba(0,0,0,0);width:118px"></div></div>'});
-          curSynopsis.vstatus = true;
-        } else {
-          $('.show-cast').css({cursor: 'default', opacity: 0.4}).attr('title', i18n.__('Cast not available')).tooltip('hide').tooltip('fixTitle');
-          curSynopsis.vstatus = 'not available';
+    showCast: function (e) {
+      if (e && e.button === 2) {
+        Common.openOrClipboardLink(e, 'https://www.imdb.com/title/' + this.model.get('imdb_id') + '/fullcredits', i18n.__('full cast & crew link'));
+      } else {
+        if (curSynopsis.vstatus == null) {
+          this.getMetaData();
         }
-      } else if (curSynopsis.vstatus === true) {
-        $('.overview').html(curSynopsis.old);
-        $('.show-cast').attr('title', i18n.__('Show cast')).tooltip('hide').tooltip('fixTitle');
-        curSynopsis.vstatus = false;
+        if (curSynopsis.vstatus === false) {
+          if (curSynopsis.cast !== '') {
+            $('.overview').html(curSynopsis.crew + curSynopsis.cast + curSynopsis.old);
+            $('.show-cast').attr('title', i18n.__('Hide cast')).tooltip('hide').tooltip('fixTitle');
+            $('.overview *').tooltip({html: true, sanitize: false, container: 'body', placement: 'bottom', delay: {show: 200, hide: 0}, template: '<div class="tooltip" style="opacity:1"><div class="tooltip-inner" style="background-color:rgba(0,0,0,0);width:118px"></div></div>'});
+            curSynopsis.vstatus = true;
+          } else {
+            $('.show-cast').css({cursor: 'default', opacity: 0.4}).attr('title', i18n.__('Cast not available')).tooltip('hide').tooltip('fixTitle');
+            curSynopsis.vstatus = 'not available';
+          }
+        } else if (curSynopsis.vstatus === true) {
+          $('.overview').html(curSynopsis.old);
+          $('.show-cast').attr('title', i18n.__('Show cast')).tooltip('hide').tooltip('fixTitle');
+          curSynopsis.vstatus = false;
+        }
       }
     },
 
@@ -294,6 +299,8 @@
     },
 
     clickPoster: (e) => Common.openOrClipboardLink(e, $('.mcover-image')[0].src, i18n.__('image url'), true),
+
+    copytoclip: (e) => Common.openOrClipboardLink(e, $(e.target)[0].textContent, i18n.__($(e.target)[0].className), true),
 
     onBeforeDestroy: function() {
       $('[data-toggle="tooltip"]').tooltip('hide');
@@ -351,16 +358,16 @@
       healthButton.render();
     },
 
-    openRelInfo: function () {
-      nw.Shell.openExternal('https://www.imdb.com/title/' + this.model.get('imdb_id') + '/releaseinfo');
+    openRelInfo: function (e) {
+      Common.openOrClipboardLink(e, 'https://www.imdb.com/title/' + this.model.get('imdb_id') + '/releaseinfo', i18n.__('release info link'));
     },
 
-    openCert: function () {
-      nw.Shell.openExternal('https://www.imdb.com/title/' + this.model.get('imdb_id') + '/parentalguide');
+    openCert: function (e) {
+      Common.openOrClipboardLink(e, 'https://www.imdb.com/title/' + this.model.get('imdb_id') + '/parentalguide', i18n.__('parental guide link'));
     },
 
-    openIMDb: function () {
-      nw.Shell.openExternal('https://www.imdb.com/title/' + this.model.get('imdb_id'));
+    openIMDb: function (e) {
+      Common.openOrClipboardLink(e, 'https://www.imdb.com/title/' + this.model.get('imdb_id'), i18n.__('IMDb page link'));
     },
 
     openMagnet: function(e) {
@@ -388,7 +395,9 @@
       } else {
         return;
       }
-      Common.openOrClipboardLink(e, sourceLink, i18n.__('source link'));
+      if (sourceLink) {
+        Common.openOrClipboardLink(e, sourceLink, i18n.__('source link'));
+      }
     },
 
     openTmdb: function(e) {
@@ -418,7 +427,7 @@
 
       if (tmdb) {
         let tmdbLink = 'https://www.themoviedb.org/movie/' + tmdb + '/edit?language=' + Settings.language;
-        Common.openOrClipboardLink(e, tmdbLink, i18n.__('TMDB link'));
+        Common.openOrClipboardLink(e, tmdbLink, i18n.__('submit metadata & translations link'));
       } else {
         $('.tmdb-link').addClass('disabled').prop('disabled', true).attr('title', i18n.__('Not available')).tooltip('hide').tooltip('fixTitle');
       }

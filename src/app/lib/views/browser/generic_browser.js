@@ -57,7 +57,6 @@
             // }));
 
             if (!isNaN(startupTime)) {
-                win.debug('Butter %s startup time: %sms', Settings.version, (window.performance.now() - startupTime).toFixed(3)); // started in database.js;
                 startupTime = 'none';
                 if (parseInt(AdvSettings.get('bigPicture'))) {
                     if (AdvSettings.get('bigPicture') !== 100) {
@@ -130,7 +129,7 @@
             default:
             }
             App.vent.trigger('settings:show');
-            curView ? $(curView).attr('style', 'border: 1px solid !important; animation: fadeBd .5s forwards; margin-left: 9px').focus().focusout(function() { this.removeAttribute('style'); }) : null;
+            curView ? $(curView).attr('style', 'border: 2px solid !important; animation: fadeBd .5s forwards, fa-beat 0.8s; margin-left: 9px; --fa-beat-scale: 1.2').focus().focusout(function() { this.removeAttribute('style'); }) : null;
         },
 
         onlineSearchHov: function () {

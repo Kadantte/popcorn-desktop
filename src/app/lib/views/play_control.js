@@ -17,8 +17,9 @@
       'click .favourites-toggle': 'toggleFavourite',
       'click .playerchoicemenu li a': 'selectPlayer',
       'click .playerchoicehelp': 'showPlayerList',
+      'click .playerchoicerefresh': 'refreshPlayerList',
       'click .watched-toggle': 'toggleWatched',
-      'click #subs-dropdown': 'hideTooltips',
+      'mousedown #subs-dropdown': 'hideTooltipsSubs',
       'click .connect-opensubtitles': 'connectOpensubtitles',
       'click #audio-dropdown': 'hideTooltips',
       'click #quality-selector': 'hideTooltips'
@@ -73,8 +74,10 @@
       this.model.set('showTorrents', false);
       this.ui.showTorrents.show();
 
+      $('.playerchoicerefresh, .playerchoicehelp').tooltip({html: true, delay: {'show': 800,'hide': 100}});
+
       if ($('.loading .maximize-icon').is(':visible') || $('.player .maximize-icon').is(':visible')) {
-        $('.button:not(#download-torrent)').addClass('disabled');
+        $('.button:not(#download-torrent, #cancel-button)').addClass('disabled');
         $('#watch-now, #watch-trailer, .playerchoice').prop('disabled', true);
       }
     },
@@ -197,10 +200,18 @@
       $('#subs-dropdown .flag.toggle, #audio-dropdown .flag.toggle, #quality-selector .qselect').tooltip('hide');
     },
 
+    hideTooltipsSubs: function (e) {
+      this.hideTooltips();
+      if (e.button === 2) {
+        nw.Shell.openExternal('https://www.opensubtitles.org/search/sublanguageid-all/' + (this.model.get('imdb_id') ? this.model.get('imdb_id').replace('tt', 'imdbid-') : ''));
+      }
+    },
+
     connectOpensubtitles: function () {
-        App.vent.trigger('movie:closeDetail');
-        App.vent.trigger('settings:show');
-        $('#opensubtitlesUsername').attr('style', 'border: 1px solid !important; animation: fadeBd .5s forwards; margin-left: 9px').focus().focusout(function() { this.removeAttribute('style'); });
+      App.vent.trigger('movie:closeDetail');
+      App.vent.trigger('settings:show');
+      $('.settings-container-contain').scrollTop($('.settings-container-contain')[0].scrollHeight);
+      $('#opensubtitlesUsername').attr('style', 'border: 2px solid !important; animation: fadeBd .5s forwards, fa-beat 0.8s; margin-left: 9px; --fa-beat-scale: 1.2').focus().focusout(function() { this.removeAttribute('style'); });
     },
 
     switchSubtitle: function(lang) {
@@ -316,23 +327,16 @@
       _this.getRegion('qualitySelector').currentView.selectNext();
     },
 
-    selectPlayer: function(e) {
-      var player = $(e.currentTarget)
-        .parent('li')
-        .attr('id')
-        .replace('player-', '');
-      this.model.set('device', player);
-      if (!player.match(/[0-9]+.[0-9]+.[0-9]+.[0-9]/gi)) {
-        AdvSettings.set('chosenPlayer', player);
-      }
+    selectPlayer: function (e) {
+      Common.selectPlayer(e, this.model);
     },
 
-    showPlayerList: function(e) {
-      App.vent.trigger('notification:show', new App.Model.Notification({
-        title: '',
-        body: i18n.__('Popcorn Time currently supports') + '<div class="splayerlist">' + extPlayerlst + '.</div><br>' + i18n.__('There is also support for Chromecast, AirPlay & DLNA devices.'),
-        type: 'success'
-      }));
+    showPlayerList: function () {
+      Common.showPlayerList();
+    },
+
+    refreshPlayerList: function (e) {
+      Common.refreshPlayerList(e);
     },
 
     showAllTorrents: function() {

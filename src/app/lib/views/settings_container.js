@@ -26,6 +26,7 @@
             'contextmenu input': 'rightclick_field',
             'click .rebuild-bookmarks': 'rebuildBookmarks',
             'click .flush-bookmarks': 'flushBookmarks',
+            'click .flush-watched': 'flushWatched',
             'click .flush-databases': 'flushAllDatabase',
             'click #faketmpLocation': 'showCacheDirectoryDialog',
             'click #fakedownloadsLocation': 'showDownloadsDirectoryDialog',
@@ -35,13 +36,14 @@
             'click .open-database-folder': 'openDatabaseFolder',
             'click .export-database': 'exportDatabase',
             'click #importdatabase': 'importDatabase',
-            'change #import-watched, #import-bookmarks, #import-settings': 'checkImportSettings',
+            'change #import-watched, #import-bookmarks, #import-torcol, #import-settings': 'checkImportSettings',
             'click .import-db': 'openModal',
             'click .modal-overlay, .modal-close': 'closeModal',
             'click #authTrakt': 'connectTrakt',
             'click #features input#activateWatchlist': 'connectTrakt',
             'click #unauthTrakt': 'disconnectTrakt',
             'click .closeTraktCode': 'disconnectTrakt',
+            'mousedown .createOpensubtitles': 'createOpensubtitles',
             'click #authOpensubtitles': 'connectOpensubtitles',
             'click #unauthOpensubtitles': 'disconnectOpensubtitles',
             'change #tmpLocation': 'updateCacheDirectory',
@@ -51,6 +53,7 @@
             'click .set-current-filter': 'saveFilter',
             'click .reset-current-filter': 'resetFilter',
             'click .update-dht': 'updateDht',
+            'click .update-app': 'updateApp',
             'mousedown #customMoviesServer': 'showFullDatalist',
             'mousedown #customSeriesServer': 'showFullDatalist',
             'mousedown #customAnimeServer': 'showFullDatalist'
@@ -304,6 +307,8 @@
                 case 'theme':
                 case 'delSeedboxCache':
                 case 'maxLimitMult':
+                case 'moviesUITransparency':
+                case 'seriesUITransparency':
                     value = $('option:selected', field).val();
                     break;
                 case 'poster_size':
@@ -329,6 +334,7 @@
                 case 'contentLangOnly':
                 case 'dhtEnable':
                 case 'coversShowRating':
+                case 'alwaysShowBookmarks':
                 case 'showSeedboxOnDlInit':
                 case 'expandedSearch':
                 case 'nativeWindowFrame':
@@ -339,7 +345,7 @@
                 case 'showAdvancedSettings':
                 case 'alwaysOnTop':
                 case 'playNextEpisodeAuto':
-                case 'automaticUpdating':
+                case 'updateNotification':
                 case 'events':
                 case 'alwaysFullscreen':
                 case 'minimizeToTray':
@@ -352,6 +358,8 @@
                 case 'moviesTabEnable':
                 case 'seriesTabEnable':
                 case 'animeTabEnable':
+                case 'favoritesTabEnable':
+                case 'watchedTabEnable':
                     value = field.is(':checked');
                     break;
                 case 'httpApiEnabled':
@@ -423,6 +431,7 @@
                 case 'opensubtitlesPassword':
                 case 'import-watched':
                 case 'import-bookmarks':
+                case 'import-torcol':
                 case 'import-settings':
                     return;
                 default:
@@ -571,6 +580,22 @@
                         $('select[name=start_screen]').change();
                     }
                     break;
+                case 'favoritesTabEnable':
+                    App.vent.trigger('favorites:list');
+                    $('.nav-hor.left li:first').click();
+                    App.vent.trigger('settings:show');
+                    if (AdvSettings.get('startScreen') === 'Favorites') {
+                        $('select[name=start_screen]').change();
+                    }
+                    break;
+                case 'watchedTabEnable':
+                    App.vent.trigger('favorites:list');
+                    $('.nav-hor.left li:first').click();
+                    App.vent.trigger('settings:show');
+                    if (AdvSettings.get('startScreen') === 'Watched') {
+                        $('select[name=start_screen]').change();
+                    }
+                    break;
                 case 'activateWatchlist':
                     if (App.Trakt.authenticated) {
                         $('.nav-hor.left li:first').click();
@@ -607,12 +632,15 @@
                         !value ? scrollPosOffset++ : scrollPosOffset--;
                     }
                     /* falls through */
+                case 'alwaysShowBookmarks':
                 case 'watchedCovers':
                 case 'defaultFilters':
                 case 'activateTempf':
                 case 'multipleExtSubtitles':
                 case 'httpApiEnabled':
                 case 'expandedSearch':
+                case 'moviesUITransparency':
+                case 'seriesUITransparency':
                 case 'playNextEpisodeAuto':
                     $('.nav-hor.left li:first').click();
                     App.vent.trigger('settings:show');
@@ -648,6 +676,11 @@
                         this.updateDht('enable');
                     } else {
                         this.alertMessageSuccess(true);
+                    }
+                    break;
+                case 'updateNotification':
+                    if (Settings.updateNotification) {
+                        this.updateApp('enable');
                     }
                     break;
                 default:
@@ -695,13 +728,13 @@
         },
 
         updateDht: function(e) {
-            let updateMode = '';
-            if (e === 'enable') {
-                updateMode = e;
-            } else if (e) {
-                updateMode = 'manual';
-            }
-            App.DhtReader.update(updateMode);
+            let updateMode = e === 'enable' ? e : (e ? 'manual' : '');
+            App.Updater.updateDHT(updateMode);
+        },
+
+        updateApp: function(e) {
+            let updateMode = e === 'enable' ? e : (e ? 'manual' : '');
+            App.Updater.onlyNotification(updateMode);
         },
 
         connectTrakt: function (e) {
@@ -728,6 +761,10 @@
                 }
                 that.$el.scrollTop(scrollPos);
             }
+        },
+
+        createOpensubtitles: function (e) {
+            Common.openOrClipboardLink(e, 'https://www.opensubtitles.org/newuser', 'link');
         },
 
         connectOpensubtitles: function (e) {
@@ -827,7 +864,7 @@
                         }
                         if (item.type === 'show') {
                             await showProvider.detail(item.imdb_id, {
-                                contextLocale: App.settings.contextLanguage || App.settings.language
+                                contextLocale: App.settings.contentLanguage || App.settings.language
                             }).then(function (show) {
                                     Database.deleteTVShow(item.imdb_id);
                                     show.providers = {};
@@ -858,10 +895,25 @@
                 });
         },
 
+        flushWatched: function (e) {
+            var btn = $(e.currentTarget);
+
+            if (!this.areYouSure(btn, i18n.__('Flushing watched...'))) {
+                return;
+            }
+
+            this.alertMessageWait(i18n.__('We are flushing your database'));
+
+            Database.deleteWatched()
+                .then(function () {
+                    that.alertMessageSuccess(true);
+                });
+        },
+
         resetSettings: function (e) {
             var btn = $(e.currentTarget);
 
-            if (!this.areYouSure(btn, i18n.__('Resetting...'))) {
+            if (!this.areYouSure(btn, i18n.__('Resetting settings...'))) {
                 return;
             }
 
@@ -877,11 +929,11 @@
         flushAllDatabase: function (e) {
             var btn = $(e.currentTarget);
 
-            if (!this.areYouSure(btn, i18n.__('Flushing...'))) {
+            if (!this.areYouSure(btn, i18n.__('Resetting...'))) {
                 return;
             }
 
-            this.alertMessageWait(i18n.__('We are flushing your databases'));
+            this.alertMessageWait(i18n.__('We are resetting all databases and settings'));
 
             Database.deleteDatabases()
                 .then(function () {
@@ -903,12 +955,10 @@
         },
 
         openTmpFolder: function () {
-            win.debug('Opening: ' + App.settings['tmpLocation']);
             App.settings.os === 'windows' ? nw.Shell.openExternal(App.settings['tmpLocation']) : nw.Shell.openItem(App.settings['tmpLocation']);
         },
 
         openDownloadsFolder: function () {
-            win.debug('Opening: ' + App.settings['downloadsLocation']);
             App.settings.os === 'windows' ? nw.Shell.openExternal(App.settings['downloadsLocation']) : nw.Shell.openItem(App.settings['downloadsLocation']);
         },
 
@@ -936,7 +986,6 @@
         },
 
         openDatabaseFolder: function () {
-            win.debug('Opening: ' + App.settings['databaseLocation']);
             App.settings.os === 'windows' ? nw.Shell.openExternal(App.settings['databaseLocation']) : nw.Shell.openItem(App.settings['databaseLocation']);
         },
 
@@ -950,18 +999,14 @@
             fileinput.on('change', function () {
                 var path = fileinput.val();
                 try {
-                    databaseFiles.forEach(function (entry) {
-                        zip.addLocalFile(App.settings['databaseLocation'] + '/' + entry);
-                    });
+                    zip.addLocalFolder(App.settings['databaseLocation']);
                     fs.writeFile(path + '/database.zip', zip.toBuffer(), function (err) {
                         that.alertMessageWait(i18n.__('Exporting Database...'));
                         win.info('Database exported to:', path);
                         that.alertMessageSuccess(false, btn, i18n.__('Export Database'), i18n.__('Database Successfully Exported'));
 
                     });
-                } catch (err) {
-                    console.log(err);
-                }
+                } catch (err) {}
                 // reset fileinput so it detect change even if we select same folder again
                 fileinput.val('');
             });
@@ -983,16 +1028,18 @@
                         for (const el of importTypes) {
                             switch (el.id) {
                                 case 'import-bookmarks':
-                                    zip.extractEntryTo('bookmarks.db', targetFolder, /*maintainEntryPath*/ false, /*overwrite*/ true);
-                                    // movies.db and shows.db are required for favourites tab view
-                                    zip.extractEntryTo('movies.db', targetFolder, false, true);
-                                    zip.extractEntryTo('shows.db', targetFolder, false, true);
+                                    zip.getEntry('bookmarks.db') ? zip.extractEntryTo('bookmarks.db', targetFolder, false, true) : null;
+                                    zip.getEntry('movies.db') ? zip.extractEntryTo('movies.db', targetFolder, false, true) : null;
+                                    zip.getEntry('shows.db') ? zip.extractEntryTo('shows.db', targetFolder, false, true) : null;
                                 break;
                                 case 'import-settings':
-                                    zip.extractEntryTo('settings.db', targetFolder, false, true);
+                                    zip.getEntry('settings.db') ? zip.extractEntryTo('settings.db', targetFolder, false, true) : null;
                                 break;
                                 case 'import-watched':
-                                    zip.extractEntryTo('watched.db', targetFolder, false, true);
+                                    zip.getEntry('watched.db') ? zip.extractEntryTo('watched.db', targetFolder, false, true) : null;
+                                break;
+                                case 'import-torcol':
+                                    zip.getEntry('TorrentCollection/') ? zip.extractEntryTo('TorrentCollection/', targetFolder + 'TorrentCollection/', false, true) : null;
                                 break;
                             }
                         }
@@ -1001,9 +1048,7 @@
                         that.alertMessageSuccess(true);
                     }
                     catch (err) {
-                        console.log(err);
                         that.alertMessageFailed(i18n.__('Invalid Database File Selected'));
-                        win.warn('Failed to Import Database');
                     }
                     // reset fileinput so it detect change even if we select same folder again
                     fileinput.val('');

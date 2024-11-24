@@ -11,7 +11,9 @@
 
         events: {
             'click .close-icon': 'closeAbout',
-            'click #changelog': 'showChangelog'
+            'mousedown #changelog': 'showChangelog',
+            'mousedown .update-app': 'updateApp',
+            'contextmenu .links': 'copytoclip'
         },
 
         onAttach: function () {
@@ -19,7 +21,6 @@
                 App.vent.trigger('about:close');
             });
             $('.links,#changelog').tooltip();
-            win.info('Show about');
             $('#movie-detail').hide();
         },
 
@@ -36,15 +37,30 @@
             }
         },
 
-        showChangelog: function () {
-            fs.readFile('./CHANGELOG.md', 'utf-8', function (err, contents) {
-                if (!err) {
-                    $('.changelog-text').html(contents.replace(/\n/g, '<br />'));
-                    $('.changelog-overlay').show();
-                } else {
-                    nw.Shell.openExternal(Settings.changelogUrl);
-                }
-            });
+        copytoclip: (e) => Common.openOrClipboardLink(e, $(e.target)[0].href, i18n.__('link'), true),
+
+        updateApp: function(e) {
+            if (e.button === 2) {
+                Common.openOrClipboardLink(e, Settings.projectUrl, i18n.__('link'), true);
+            } else {
+                let updateMode = e === 'enable' ? e : (e ? 'about' : '');
+                App.Updater.onlyNotification(updateMode);
+            }
+        },
+
+        showChangelog: function (e) {
+            if (e.button === 2) {
+                Common.openOrClipboardLink(e, (App.git ? App.git.semver : App.settings.version), i18n.__('version number'), true);
+            } else {
+                fs.readFile('./CHANGELOG.md', 'utf-8', function (err, contents) {
+                    if (!err) {
+                        $('.changelog-text').html(contents.replace(/\n/g, '<br />'));
+                        $('.changelog-overlay').show();
+                    } else {
+                        nw.Shell.openExternal(Settings.changelogUrl);
+                    }
+                });
+            }
         },
 
         closeChangelog: function () {

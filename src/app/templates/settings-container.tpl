@@ -8,7 +8,7 @@
             <span>
                 <i class="far fa-keyboard keyboard tooltipped" data-toggle="tooltip" data-placement="bottom" title="<%= i18n.__("Keyboard Shortcuts") %>"></i>
                 <i class="fa fa-info-circle about tooltipped" data-toggle="tooltip" data-placement="bottom" title="<%= i18n.__("About") %>"></i>
-                <i class="fa fa-question-circle help tooltipped" data-toggle="tooltip" data-placement="bottom" title="<%= i18n.__("Help Section") %>"></i>
+                <i class="fa fa-question-circle help tooltipped" data-toggle="tooltip" data-placement="bottom" title="<%= i18n.__("FAQ") %>"></i>
             </span>
         </div>
     </section>
@@ -50,8 +50,9 @@
                             Settings.moviesTabEnable ? arr_screens.push("Movies") : null;
                             Settings.seriesTabEnable ? arr_screens.push("TV Series") : null;
                             Settings.animeTabEnable ? arr_screens.push("Anime") : null;
-                            arr_screens.push("Favorites");
-                            Settings.activateWatchlist ? arr_screens.push("Watchlist") : null;
+                            Settings.favoritesTabEnable ? arr_screens.push("Favorites") : null;
+                            Settings.watchedTabEnable ? arr_screens.push("Watched") : null;
+                            Settings.activateWatchlist && App.Trakt.authenticated ? arr_screens.push("Watchlist") : null;
                             Settings.activateTorrentCollection ? arr_screens.push("Torrent-collection") : null;
                             Settings.activateSeedbox ? arr_screens.push("Seedbox") : null;
                             arr_screens.push("Last Open");
@@ -75,10 +76,20 @@
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                 <input class="settings-checkbox" name="animeTabEnable" id="animeTabEnable" type="checkbox" <%=(Settings.animeTabEnable? "checked='checked'":"")%>>
                 <label class="settings-label" for="animeTabEnable"><%= i18n.__("Anime") %></label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <input class="settings-checkbox" name="favoritesTabEnable" id="favoritesTabEnable" type="checkbox" <%=(Settings.favoritesTabEnable? "checked='checked'":"")%>>
+                <label class="settings-label" for="favoritesTabEnable"><%= i18n.__("Favorites") %></label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <input class="settings-checkbox" name="watchedTabEnable" id="watchedTabEnable" type="checkbox" <%=(Settings.watchedTabEnable? "checked='checked'":"")%>>
+                <label class="settings-label" for="watchedTabEnable"><%= i18n.__("Watched") %></label>
             </span>
             <span>
                 <input class="settings-checkbox" name="coversShowRating" id="coversShowRating" type="checkbox" <%=(Settings.coversShowRating? "checked='checked'":"")%>>
                 <label class="settings-label" for="coversShowRating"><%= i18n.__("Show rating over covers") %></label>
+            </span>
+            <span>
+                <input class="settings-checkbox" name="alwaysShowBookmarks" id="alwaysShowBookmarks" type="checkbox" <%=(Settings.alwaysShowBookmarks? "checked='checked'":"")%>>
+                <label class="settings-label" for="alwaysShowBookmarks"><%= i18n.__("Always show bookmark over covers") %></label>
             </span>
             <% if (Settings.activateSeedbox) { %>
             <span>
@@ -107,7 +118,7 @@
                     <select name="defaultFilters"><%=select_default_filter%></select>
                     <div class="dropdown-arrow"></div>&nbsp;
                     <% if (Settings.defaultFilters === 'custom') { %>&nbsp;<i class="set-current-filter fa fa-pen tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Set Filters") %>"></i><% } %>
-                    <% if (Settings.defaultFilters === 'custom' || Settings.defaultFilters === 'remember') { %><i class="reset-current-filter fa fa-redo tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Reset Filters") %>"></i><i style="padding-right:80px">&nbsp;</i><% } %>
+                    <% if (Settings.defaultFilters === 'custom' || Settings.defaultFilters === 'remember') { %><i class="reset-current-filter fa fa-rotate-right tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Reset Filters") %>"></i><i style="padding-right:80px">&nbsp;</i><% } %>
                 </div>
             </span>
             <span>
@@ -152,7 +163,7 @@
                             var pos_type = {"134": "100%", "154": "113%", "174": "125%", "194": "138%", "214": "150%", "234": "163%", "254": "175%", "274": "188%", "294": "200%"};
                             var pos_sizes = "";
                             for(var key in pos_type) {
-                                pos_sizes += "<option "+(Settings.postersWidth == key? "selected='selected'":"")+" value='"+key+"'>"+i18n.__(pos_type[key])+"</option>";
+                                pos_sizes += "<option "+(Settings.postersWidth == key? "selected='selected'":"")+" value='"+key+"'>"+pos_type[key]+"</option>";
                             }
                         %>
                     <select name="poster_size"><%=pos_sizes%></select>
@@ -161,7 +172,32 @@
             </span>
             <span>
                 <p><%= i18n.__("UI Scaling") %></p>
-                <input id="bigPicture" type="text" size="5" name="bigPicture" value="<%=Settings.bigPicture%>%" autocomplete="off"/>&nbsp;&nbsp;&nbsp;<em><%= i18n.__("25% - 400%") %></em>
+                <input id="bigPicture" type="text" size="5" name="bigPicture" value="<%=Settings.bigPicture%>%" autocomplete="off"/>&nbsp;&nbsp;&nbsp;<em>25% - 400%</em>
+            </span>
+            <span>
+                <div class="dropdown UITransparency">
+                    <p><%= i18n.__("UI Transparency") %></p>
+                    <label><%= i18n.__("Movies") %></label>
+                        <%
+                            var transpm_type = {"1": "Disabled", "0.90": "Very Low", "0.75": "Low", "0.65": "Medium", "0.55": "High", "0.40": "Very High"};
+                            var transpm_sizes = "";
+                            for(var key in transpm_type) {
+                                transpm_sizes += "<option "+(Settings.moviesUITransparency == key? "selected='selected'":"")+" value='"+key+"'>"+i18n.__(transpm_type[key])+"</option>";
+                            }
+                        %>
+                    <select name="moviesUITransparency"><%=transpm_sizes%></select>
+                    <div class="dropdown-arrow"></div>
+                    <label><%= i18n.__("Series") %></label>
+                        <%
+                            var transps_type = {"": "Disabled", "vlow": "Very Low", "low": "Low", "medium": "Medium", "high": "High", "vhigh": "Very High"};
+                            var transps_sizes = "";
+                            for(var key in transps_type) {
+                                transps_sizes += "<option "+(Settings.seriesUITransparency == key? "selected='selected'":"")+" value='"+key+"'>"+i18n.__(transps_type[key])+"</option>";
+                            }
+                        %>
+                    <select name="seriesUITransparency"><%=transps_sizes%></select>
+                    <div class="dropdown-arrow"></div>
+                </div>
             </span>
             <span>
                 <input class="settings-checkbox" name="nativeWindowFrame" id="nativeWindowFrame" type="checkbox" <%=(Settings.nativeWindowFrame? "checked='checked'":"")%>>
@@ -174,6 +210,10 @@
             <span>
                 <input class="settings-checkbox" name="minimizeToTray" id="minimizeToTray" type="checkbox" <%=(Settings.minimizeToTray? "checked='checked'":"")%>>
                 <label class="settings-label" for="minimizeToTray"><%= i18n.__("Minimize to Tray") %></label>
+            </span>
+            <span>
+                <input class="settings-checkbox" name="events" id="events" type="checkbox" <%=(Settings.events? "checked='checked'":"")%>>
+                <label class="settings-label" for="events"><%= i18n.__("Celebrate various events") %></label>
             </span>
         </div>
     </section>
@@ -219,10 +259,10 @@
                 <div class="dropdown translateTitle">
                     <p><%= i18n.__("Title translation") %></p>
                     <select name="translateTitle">
-                        <option <%=(Settings.translateTitle == "translated-origin"? "selected='selected'":"") %> value="translated-origin"><%= i18n.__("Translated - Original") %></option>
-                        <option <%=(Settings.translateTitle == "origin-translated"? "selected='selected'":"") %> value="origin-translated"><%= i18n.__("Original - Translated") %></option>
-                        <option <%=(Settings.translateTitle == "translated"? "selected='selected'":"") %> value="translated"><%= i18n.__("Translated only") %></option>
                         <option <%=(Settings.translateTitle == "origin"? "selected='selected'":"") %> value="origin"><%= i18n.__("Original only") %></option>
+                        <option <%=(Settings.translateTitle == "origin-translated"? "selected='selected'":"") %> value="origin-translated"><%= i18n.__("Original - Translated") %></option>
+                        <option <%=(Settings.translateTitle == "translated-origin"? "selected='selected'":"") %> value="translated-origin"><%= i18n.__("Translated - Original") %></option>
+                        <option <%=(Settings.translateTitle == "translated"? "selected='selected'":"") %> value="translated"><%= i18n.__("Translated only") %></option>
                     </select>
                     <div class="dropdown-arrow"></div>
                 </div>
@@ -385,9 +425,6 @@
                     </span>
                 <% } else { %>
                     <span>
-                        <%= i18n.__("Connect to %s to automatically fetch subtitles for movies and episodes you watch in %s", "OpenSubtitles.org", Settings.projectName) %>
-                    </span>
-                    <span>
                         <p><%= i18n.__("Username") %></p>
                         <input type="text" size="50" id="opensubtitlesUsername" name="opensubtitlesUsername">
                         <div class="loading-spinner" style="display: none"></div>
@@ -396,19 +433,12 @@
                     </span>
                     <span>
                         <p><%= i18n.__("Password") %></p>
-                        <input type="password" size="50" id="opensubtitlesPassword" name="opensubtitlesPassword"><br>
+                        <input type="password" size="50" id="opensubtitlesPassword" name="opensubtitlesPassword" placeholder="* <%= i18n.__('Stored in local database as encrypted MD5 hash') %>"><br>
                     </span>
-                    <div class="btns database">
-                        <div class="btn-settings database" id="authOpensubtitles">
-                            <i class="fa fa-user">&nbsp;&nbsp;</i>
-                            <%= i18n.__("Connect To %s", "OpenSubtitles") %>
-                        </div>
-                        <a class="btn-settings database links" href="https://www.opensubtitles.org/newuser" role="button">
-                            <i class="fa fa-user-plus">&nbsp;&nbsp;</i><%= i18n.__("Create an account") %>
-                        </a>
-                    </div>                    
                     <span>
-                        <em><%= i18n.__("* %s stores an encrypted hash of your password in your local database", Settings.projectName) %></em>
+                        <em>* <a class="syncOpensubtitles" id="authOpensubtitles" href="#"><%= i18n.__("Connect to %s", "OpenSubtitles.org") %></a>
+                        <%= i18n.__("to automatically fetch subtitles for movies and episodes you watch in %s", Settings.projectName) %>&nbsp;&nbsp;
+                        (<a class="createOpensubtitles" href="#"><%= i18n.__("Create an account") %></a>)</em>
                     </span>
                 <% } %>
             </div>
@@ -485,6 +515,9 @@
             <span>
                 <input class="settings-checkbox" name="httpApiEnabled" id="httpApiEnabled" type="checkbox" <%=(Settings.httpApiEnabled ? "checked='checked'":"")%>>
                 <label class="settings-label" for="httpApiEnabled"><%= i18n.__("Enable remote control") %></label>
+                <% if (Settings.httpApiEnabled) { %>
+                <i class="fa fa-qrcode qr-code tooltipped" title="<%= i18n.__('Generate Pairing QR code') %>"></i>
+                <% } %>
             </span>
             <% if (Settings.httpApiEnabled) { %>
             <span>
@@ -503,12 +536,6 @@
                 <p><%= i18n.__("HTTP API Password") %></p>
                 <input id="httpApiPassword" type="text" name="httpApiPassword" value="<%=Settings.httpApiPassword%>">
             </span>
-            <div class="btns database">
-                <div class="btn-settings database qr-code">
-                    <i class="fa fa-qrcode">&nbsp;&nbsp;</i>
-                    <%= i18n.__("Generate Pairing QR code") %>
-                </div>
-            </div>
             <div id="qrcode-overlay" class="modal-overlay"></div>
             <div id="qrcode-modal" class="modal-content">
                 <span class="modal-close fa-stack fa-1x" id="qrcode-close">
@@ -516,7 +543,7 @@
                     <i class="fa fa-times fa-stack-1x" style="margin-top: -2px;"></i>
                 </span>
                 <canvas id="qrcode" width="200" height="200"></canvas>
-            </div><!-- /.modal -->
+            </div>
             <% } %>
         </div>
     </section>
@@ -529,15 +556,14 @@
                     <p><%= i18n.__("Movies API Server(s)") %></p>
                     <input type="text" size="61" id="customMoviesServer" name="customMoviesServer" list="moviesServers" value="<%= encodeURI(Settings.customMoviesServer ? Settings.customMoviesServer : (Settings.dhtEnable && Settings.dhtInfo ? Settings.dhtInfo.server : Settings.providers.movie.uri[0].split('=')[1])) %>">
                     <datalist id="moviesServers">
-                        <% var movieServList = [Settings.providers.movie.uri[0].split('=')[1].replace(/,/g, ',  ')];
+                        <% var movieServList = [Settings.providers.movie.uri[0].split('=')[1]];
                            Settings.customServers && Settings.customServers.movie ? movieServList = movieServList.concat(Settings.customServers.movie) : null;
-                           Settings.dhtInfo ? movieServList = movieServList.concat([Settings.dhtInfo.server.replace(/,/g, ',  ')]) : null;
+                           Settings.dhtInfo ? movieServList = movieServList.concat([Settings.dhtInfo.server]) : null;
                            for (var i = 0; i < movieServList.length; ++i) {
                         %>
                         <option value="<%= encodeURI(movieServList[i]).replace(/%20/g, ' ') %>">
                         <% } %>
                     </datalist>
-                    <i class="update-dht fa fa-redo tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Check for updates") %>"></i>
                 </div>
             </span>
             <span>
@@ -545,15 +571,14 @@
                     <p><%= i18n.__("Series API Server(s)") %></p>
                     <input type="text" size="61" id="customSeriesServer" name="customSeriesServer" list="seriesServers" value="<%= encodeURI(Settings.customSeriesServer ? Settings.customSeriesServer : (Settings.dhtEnable && Settings.dhtInfo ? Settings.dhtInfo.server : Settings.providers.tvshow.uri[0].split('=')[1])) %>">
                     <datalist id="seriesServers">
-                        <% var seriesServList = [Settings.providers.tvshow.uri[0].split('=')[1].replace(/,/g, ',  ')];
+                        <% var seriesServList = [Settings.providers.tvshow.uri[0].split('=')[1]];
                            Settings.customServers && Settings.customServers.tvshow ? seriesServList = seriesServList.concat(Settings.customServers.tvshow) : null;
-                           Settings.dhtInfo ? seriesServList = seriesServList.concat([Settings.dhtInfo.server.replace(/,/g, ',  ')]) : null;
+                           Settings.dhtInfo ? seriesServList = seriesServList.concat([Settings.dhtInfo.server]) : null;
                            for (var i = 0; i < seriesServList.length; ++i) {
                         %>
                         <option value="<%= encodeURI(seriesServList[i]).replace(/%20/g, ' ') %>">
                         <% } %>
                     </datalist>
-                    <i class="update-dht fa fa-redo tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Check for updates") %>"></i>
                 </div>
             </span>
             <span>
@@ -561,19 +586,23 @@
                     <p><%= i18n.__("Anime API Server(s)") %></p>
                     <input type="text" size="61" id="customAnimeServer" name="customAnimeServer" list="animeServers" value="<%= encodeURI(Settings.customAnimeServer ? Settings.customAnimeServer : (Settings.dhtEnable && Settings.dhtInfo ? Settings.dhtInfo.server : Settings.providers.anime.uri[0].split('=')[1])) %>">
                     <datalist id="animeServers">
-                        <% var animeServList = [Settings.providers.anime.uri[0].split('=')[1].replace(/,/g, ',  ')];
+                        <% var animeServList = [Settings.providers.anime.uri[0].split('=')[1]];
                            Settings.customServers && Settings.customServers.anime ? animeServList = animeServList.concat(Settings.customServers.anime) : null;
-                           Settings.dhtInfo ? animeServList = animeServList.concat([Settings.dhtInfo.server.replace(/,/g, ',  ')]) : null;
+                           Settings.dhtInfo ? animeServList = animeServList.concat([Settings.dhtInfo.server]) : null;
                            for (var i = 0; i < animeServList.length; ++i) {
                         %>
                         <option value="<%= encodeURI(animeServList[i]).replace(/%20/g, ' ') %>">
                         <% } %>
                     </datalist>
-                    <i class="update-dht fa fa-redo tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Check for updates") %>"></i>
                 </div>
             </span>
             <span id="apiserver_info">
                 <em>* <%= i18n.__("You can add multiple API Servers separated with a , from which it will select randomly (*for load balancing) until it finds the first available") %></em>
+            </span>
+            <span>
+                <input class="settings-checkbox" name="dhtEnable" id="dhtEnable" type="checkbox" <%=(Settings.dhtEnable? "checked='checked'":"")%>>
+                <label class="settings-label" for="dhtEnable"><%= i18n.__("Automatically update the API Server URLs") %></label>
+                <i class="update-dht fa fa-rotate tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Check for updates") %>"></i>
             </span>
         </div>
     </section>
@@ -655,7 +684,7 @@
             <span>
                 <p><%= i18n.__("Cache Directory") %></p>
                 <input type="text" placeholder="<%= i18n.__("Cache Directory") %>" id="faketmpLocation" value="<%= Settings.tmpLocation %>" readonly="readonly" size="61" />
-                <i class="open-tmp-folder fa fa-folder-open tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Open Cache Directory") %>"></i>
+                <i class="open-tmp-folder fa fa-box-archive tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Open Cache Directory") %>"></i>
                 <input type="file" name="tmpLocation" id="tmpLocation" nwdirectory style="display: none;" nwworkingdir="<%= Settings.tmpLocation %>" />
             </span>
             <span>
@@ -687,7 +716,7 @@
             <span>
                 <p><%= i18n.__("Downloads Directory") %></p>
                 <input type="text" placeholder="<%= i18n.__("Downloads Directory") %>" id="fakedownloadsLocation" value="<%= Settings.downloadsLocation %>" readonly="readonly" size="61" />
-                <i class="open-downloads-folder fa fa-folder-open tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Open Downloads Directory") %>"></i>
+                <i class="open-downloads-folder fa fa-box-archive tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Open Downloads Directory") %>"></i>
                 <input type="file" name="downloadsLocation" id="downloadsLocation" nwdirectory style="display: none;" nwworkingdir="<%= Settings.downloadsLocation %>" />
             </span>
             <% } %>
@@ -700,15 +729,13 @@
             <span>
                 <p><%= i18n.__("Database Directory") %></p>
                 <input type="text" placeholder="<%= i18n.__("Database Directory") %>" id="fakedatabaseLocation" value="<%= Settings.databaseLocation %>" readonly="readonly" size="61" />
-                <i class="open-database-folder fa fa-folder-open tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Open Database Directory") %>"></i>
+                <label><i class="fa fa-down-long database import-db tooltipped" title="<%= i18n.__("Import Database") %>"></i></label>
+                <label for="exportdatabase"><i class="fa fa-up-long database export-database tooltipped" title="<%= i18n.__("Export Database") %>"></i></label>
+                <input type="file" id="exportdatabase" style="display:none" nwdirectory>
+                <i class="open-database-folder fa fa-database tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Open Database Directory") %>"></i>
                 <input type="file" name="fakedatabaseLocation" id="fakedatabaseLocation" nwdirectory style="display: none;" nwworkingdir="<%= Settings.databaseLocation %>" />
             </span>
             <div class="btns database import-database">
-                <!-- Button trigger modal -->
-                <div class="btn-settings database import-db">
-                    <label class="import-database" title="<%= i18n.__("Select data types to import") %>"><%= i18n.__("Import Database") %>&nbsp;</label>
-                    <i class="fa fa-level-down-alt">&nbsp;</i>
-                </div><!-- / btn -->
                 <div id="importdb-overlay" class="modal-overlay"></div>
                 <div id="importdb-modal" class="modal-content">
                     <span class="modal-close fa-stack fa-1x" id="importdb-close">
@@ -727,47 +754,40 @@
                         <label class="settings-label" for="import-bookmarks"><%= i18n.__("Bookmarked items") %></label>
                     </span>
                     <span>
+                        <input class="settings-checkbox" name="import-torcol" id="import-torcol" type="checkbox" checked='checked'>
+                        <label class="settings-label" for="import-torcol"><%= i18n.__("Saved Torrents") %></label>
+                    </span>
+                    <span>
                         <input class="settings-checkbox" name="import-settings" id="import-settings" type="checkbox" checked='checked'>
                         <label class="settings-label" for="import-settings"><%= i18n.__("Settings") %></label>
                     </span>
                     <div class="btn-settings btn-block database">
                         <label class="import-database" for="importdatabase"  title="<%= i18n.__("Open File to Import") %>"><%= i18n.__("Import Database") %>&nbsp;</label>
-                        <i class="fa fa-level-down-alt">&nbsp;</i>
+                        <i class="fa fa-down-long">&nbsp;</i>
                         <input type="file" id="importdatabase" accept=".zip" style="display:none">
                     </div>
-                </div><!-- /.modal -->
-                <div class="btn-settings database export-database">
-                    <label class="export-database" for="exportdatabase" title="<%= i18n.__("Browse Directory to save to") %>" ><%= i18n.__("Export Database") %>&nbsp;</label>
-                    <i class="fa fa-level-up-alt">&nbsp;</i>
-                    <input type="file" id="exportdatabase" style="display:none" nwdirectory>
                 </div>
             </div>
         </div>
     </section>
 
     <section id="miscellaneous">
-        <div class="title"><%= i18n.__("Miscellaneous") %></div>
+        <div class="title"><%= i18n.__("Updates") %></div>
         <div class="content">
             <span>
-                <input class="settings-checkbox" name="dhtEnable" id="dhtEnable" type="checkbox" <%=(Settings.dhtEnable? "checked='checked'":"")%>>
-                <label class="settings-label" for="dhtEnable"><%= i18n.__("Automatically update the API Server URLs") %></label>
-            </span>
-            <span>
-                <input class="settings-checkbox" name="automaticUpdating" id="automaticUpdating" type="checkbox" <%=(Settings.automaticUpdating? "checked='checked'":"")%>>
-                <label class="settings-label" for="automaticUpdating"><%= i18n.__("Automatically update the app when a new version is available") %></label>
-            </span>
-            <span>
-                <input class="settings-checkbox" name="events" id="events" type="checkbox" <%=(Settings.events? "checked='checked'":"")%>>
-                <label class="settings-label" for="events"><%= i18n.__("Celebrate various events") %></label>
+                <input class="settings-checkbox" name="updateNotification" id="updateNotification" type="checkbox" <%=(Settings.updateNotification? "checked='checked'":"")%>>
+                <label class="settings-label" for="updateNotification"><%= i18n.__("Show a notification when a new version is available") %></label>
+                <i class="update-app fa fa-rotate tooltipped" data-toggle="tooltip" data-placement="auto" title="<%= i18n.__("Check for updates") %>"></i>
             </span>
         </div>
     </section>
 
     <div class="btns">
-        <div class="btn-settings rebuild-bookmarks"><i class="fa fa-redo">&nbsp;&nbsp;</i><%= i18n.__("Rebuild bookmarks database") %></div>
-        <div class="btn-settings flush-bookmarks"><i class="fa fa-trash">&nbsp;&nbsp;</i><%= i18n.__("Flush bookmarks database") %></div>
-        <div class="btn-settings flush-databases"><i class="fa fa-trash">&nbsp;&nbsp;</i><%= i18n.__("Flush all databases") %></div>
-        <div class="btn-settings default-settings"><i class="fa fa-redo">&nbsp;&nbsp;</i><%= i18n.__("Reset to Default Settings") %></div>
+        <div class="btn-settings rebuild-bookmarks">&nbsp;<i class="fa fa-wrench">&nbsp;&nbsp;&nbsp;</i><%= i18n.__("Rebuild bookmarks database") %>&nbsp;</div>
+        <div class="btn-settings flush-bookmarks">&nbsp;<i class="fa fa-trash">&nbsp;&nbsp;&nbsp;</i><%= i18n.__("Flush bookmarks database") %>&nbsp;</div>
+        <div class="btn-settings flush-watched">&nbsp;<i class="fa fa-trash">&nbsp;&nbsp;&nbsp;</i><%= i18n.__("Flush watched database") %>&nbsp;</div>
+        <div class="btn-settings default-settings">&nbsp;<i class="fa fa-rotate-right">&nbsp;&nbsp;&nbsp;</i><%= i18n.__("Reset to Default Settings") %>&nbsp;</div>
+        <div class="btn-settings flush-databases">&nbsp;<i class="fa fa-rotate-right">&nbsp;&nbsp;&nbsp;</i><%= i18n.__("Reset all") %>&nbsp;&nbsp;</div>
     </div>
 
 </div>

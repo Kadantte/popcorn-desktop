@@ -25,9 +25,9 @@
             'click .close-icon': 'closeDetails',
             'click .tab-season': 'clickSeason',
             'click .tab-episode': 'clickEpisode',
-            'click .shmi-year': 'openRelInfo',
-            'click .shmi-imdb': 'openIMDb',
-            'click .shmi-tmdb-link': 'openTmdb',
+            'mousedown .shmi-year': 'openRelInfo',
+            'mousedown .shmi-imdb': 'openIMDb',
+            'mousedown .shmi-tmdb-link': 'openTmdb',
             'mousedown .magnet-icon': 'openMagnet',
             'mousedown .source-icon': 'openSource',
             'dblclick .tab-episode': 'dblclickEpisode',
@@ -35,7 +35,10 @@
             'click .shmi-rating': 'switchRating',
             'click .health-icon': 'refreshTorrentHealth',
             'mousedown .shp-img': 'clickPoster',
-            'click .playerchoicehelp': 'showPlayerList'
+            'mousedown .show-detail-container': 'exitZoom', 
+            'mousedown .shm-title, .sdoi-title, .episodeData div': 'copytoclip',
+            'click .playerchoicehelp': 'showPlayerList',
+            'click .playerchoicerefresh': 'refreshPlayerList'
         },
 
         regions: {
@@ -158,7 +161,6 @@
         },
 
         onUpdateTorrentsList: function(info) {
-            console.log('Update Torrents List: ', info);
             if (!info) {
                 this.getRegion('torrentList').empty();
                 this.getRegion('torrentShowList').empty();
@@ -254,6 +256,8 @@
             App.Device.Collection.setDevice(Settings.chosenPlayer);
             App.Device.ChooserView('#player-chooser').render();
             $('.spinner').hide();
+
+            $('.playerchoicerefresh, .playerchoicehelp').tooltip({html: true, delay: {'show': 800,'hide': 100}});
 
             if ($('.loading .maximize-icon').is(':visible') || $('.player .maximize-icon').is(':visible')) {
                 $('.sdo-watch, .sdow-watchnow, #download-torrent').addClass('disabled');
@@ -392,12 +396,12 @@
                 });
         },
 
-        openRelInfo: function () {
-            nw.Shell.openExternal('https://www.imdb.com/title/' + this.model.get('imdb_id') + '/releaseinfo');
+        openRelInfo: function (e) {
+            Common.openOrClipboardLink(e, 'https://www.imdb.com/title/' + this.model.get('imdb_id') + '/releaseinfo', i18n.__('release info link'));
         },
 
-        openIMDb: function () {
-            nw.Shell.openExternal('https://www.imdb.com/title/' + this.model.get('imdb_id'));
+        openIMDb: function (e) {
+            Common.openOrClipboardLink(e, 'https://www.imdb.com/title/' + this.model.get('imdb_id'), i18n.__('IMDb page link'));
         },
 
         openMagnet: function (e) {
@@ -408,7 +412,9 @@
 
         openSource: function (e) {
             var torrentUrl = $('.startStreaming').attr('data-source');
-            Common.openOrClipboardLink(e, torrentUrl, i18n.__('source link'));
+            if (torrentUrl) {
+                Common.openOrClipboardLink(e, torrentUrl, i18n.__('source link'));
+            }
         },
 
         openTmdb: function(e) {
@@ -438,7 +444,7 @@
 
             if (tmdb) {
                 let tmdbLink = 'https://www.themoviedb.org/tv/' + tmdb + '/edit?language=' + Settings.language;
-                Common.openOrClipboardLink(e, tmdbLink, i18n.__('TMDB link'));
+                Common.openOrClipboardLink(e, tmdbLink, i18n.__('submit metadata & translations link'));
             } else {
                 $('.shmi-tmdb-link').addClass('disabled').prop('disabled', true).attr('title', i18n.__('Not available')).tooltip('hide').tooltip('fixTitle');
             }
@@ -912,14 +918,29 @@
         },
 
         clickPoster: function(e) {
+            e.stopPropagation();
             if (e.button === 0) {
-                $('.sh-poster, .show-details, .sh-metadata, .sh-actions').toggleClass('active');
+                $('.sh-poster').hasClass('active') ? this.exitZoom() : this.posterZoom();
             } else if (e.button === 2) {
                 var clipboard = nw.Clipboard.get();
                 clipboard.set($('.shp-img')[0].style.backgroundImage.slice(4, -1).replace(/"/g, ''), 'text');
                 $('.notification_alert').text(i18n.__('The image url was copied to the clipboard')).fadeIn('fast').delay(2500).fadeOut('fast');
             }
         },
+
+        posterZoom: function() {
+            var zoom = $('.show-detail-container').height() / $('.shp-img').height() * (0.75 + Settings.bigPicture / 2000);
+            var top = parseInt(($('.shp-img').height() * zoom - $('.shp-img').height()) / 2 + (3000 / Settings.bigPicture)) + 'px';
+            var left = parseInt(($('.shp-img').width() * zoom - $('.shp-img').width()) / 2 + (2000 / Settings.bigPicture)) + 'px';
+            $('.sh-poster, .show-details, .sh-metadata, .sh-actions').addClass('active');
+            $('.sh-poster.active').css({transform: 'scale(' + zoom + ')', top: top, left: left});
+        },
+
+        exitZoom: function() {
+            $('.sh-poster').hasClass('active') ? $('.sh-poster, .show-details, .sh-metadata, .sh-actions').removeClass('active').removeAttr('style') : null;
+        },
+
+        copytoclip: (e) => Common.openOrClipboardLink(e, $(e.target)[0].textContent, ($(e.target)[0].className ? i18n.__($(e.target)[0].className.replace('shm-', '').replace('sdoi-', 'episode ')) : i18n.__('episode title')), true),
 
         retrieveTorrentHealth: function(cb) {
             const torrentURL = $('.startStreaming').attr('data-torrent');
@@ -940,33 +961,28 @@
             const sourceURL = $('.startStreaming').attr('data-source');
             const provider = $('.startStreaming').attr('data-provider');
             let providerIcon;
+            const showProvider = App.Config.getProviderForType('tvshow')[0];
+            this.icons.getLink(showProvider, provider)
+                .then((icon) => providerIcon = icon || '/src/app/images/icons/' + provider + '.png')
+                .catch((error) => { !providerIcon ? providerIcon = '/src/app/images/icons/' + provider + '.png' : null; })
+                .then(() => $('.source-icon').html(`<img src="${providerIcon}" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.top='0'; this.parentElement.classList.add('fas', 'fa-link')" onload="this.onerror=null; this.onload=null;">`));
             if (sourceURL) {
-                const showProvider = App.Config.getProviderForType('tvshow')[0];
-                this.icons.getLink(showProvider, provider)
-                    .then((icon) => providerIcon = icon || '/src/app/images/icons/' + provider + '.png')
-                    .catch((error) => { !providerIcon ? providerIcon = '/src/app/images/icons/' + provider + '.png' : null; })
-                    .then(() => $('.source-icon').html(`<img src="${providerIcon}" onerror="this.style.display='none'; this.parentElement.style.top='0'; this.parentElement.classList.add('fas', 'fa-link')">`));
-                $('.source-icon').show().attr('data-original-title', sourceURL.split('//').pop().split('/')[0]);
+                $('.source-icon').attr('data-original-title', sourceURL.split('//').pop().split('/')[0]).css('cursor', 'pointer');
             } else {
-                $('.source-icon').html('');
-                $('.source-icon').hide();
+                $('.source-icon').attr('data-original-title', provider.toLowerCase()).css('cursor', 'default');
             }
         },
 
         selectPlayer: function (e) {
-            var player = $(e.currentTarget).parent('li').attr('id').replace('player-', '');
-            _this.model.set('device', player);
-            if (!player.match(/[0-9]+.[0-9]+.[0-9]+.[0-9]/ig)) {
-                AdvSettings.set('chosenPlayer', player);
-            }
+            Common.selectPlayer(e, _this.model);
         },
 
-        showPlayerList: function(e) {
-            App.vent.trigger('notification:show', new App.Model.Notification({
-                title: '',
-                body: i18n.__('Popcorn Time currently supports') + '<div class="splayerlist">' + extPlayerlst + '.</div><br>' + i18n.__('There is also support for Chromecast, AirPlay & DLNA devices.'),
-                type: 'success'
-            }));
+        showPlayerList: function () {
+            Common.showPlayerList();
+        },
+
+        refreshPlayerList: function (e) {
+            Common.refreshPlayerList(e);
         },
 
         showAllTorrents: function() {

@@ -1,11 +1,11 @@
 <div class="loading">
   <div class="loading-backdrop" <% try { %> style="background-image:url( <%= backdrop %> )" <% }catch(err) {} %>></div>
-  <div class="loading-backdrop-overlay"></div>
+  <div class="loading-backdrop-overlay"<% if($('.backdrop')[0] && Settings.moviesUITransparency !== '0.65') {%> style="opacity:<%=Settings.moviesUITransparency%>"<%} else if ($('.sh-backdrop')[0] && Settings.seriesUITransparency !== 'medium') {switch(Settings.seriesUITransparency) { case 'high': %> style="opacity:0.6"<%; break; case 'vhigh': %> style="opacity:0.5"<%; break; default: %><%}}%>></div>
   <div class="fa fa-angle-down minimize-icon tooltipped" data-toggle="tooltip" data-placement="bottom" title="<%= i18n.__("Minimize") %>"></div>
   <div class="maximize-icon">
       <span class="buffer_percent"></span>
       <span class="fa fa-play" id="max_play_ctrl"></span>
-      <span class="title"></span>
+      <span class="title copytoclip" data-copy="title"></span>
       <span id="maxdllb">@ </span>
       <span class="download_speed value" id="maxdl"></span>
       <span class="fa fa-angle-up tooltipped" id="maxic" data-toggle="tooltip" data-placement="top" title="<%= i18n.__("Restore") %>"></span>
@@ -13,7 +13,7 @@
 
     <div class="state-flex">
         <div class="state">
-            <div class="title tooltipped copytoclip" data-copy="title" data-toggle="tooltip" data-placement="bottom" title="<%= i18n.__("Right click to copy") %>"></div>
+            <div class="title tooltipped copytoclip" data-copy="title" data-toggle="tooltip" data-placement="bottom"></div>
             <div class="external-play"><%= i18n.__("Streaming to") %> <span class="player-name"></span></div>
 
             <!-- loading bar -->
@@ -23,47 +23,6 @@
 
             <!-- download -->
             <div class="text_download"><%= i18n.__(state) %></div>
-
-            <!-- vpn -->
-            <div id="vpn-contents" class="vpn">
-                <div class="heading">Anyone can know where you’re from</div>
-                <div class="subheading">
-                    <p>Hide your IP with a VPN to block unwanted exposure and data leaks.</p>
-                    <p>Without VPN, <span id="userISP"></span> will continue to track and record everything.</p>
-                </div>
-                <div class="flex-map">
-                    <div class="map">
-                        <img id="map" src="#" / >
-                    </div>
-                    <div class="details">
-                        <div class="group">
-                            <div class="fixed-width">IP Address:</div>
-                            <div id="userIp"></div>
-                        </div>
-                        <div class="group">
-                            <div class="fixed-width">City:</div>
-                            <div id="userCity"></div>
-                        </div>
-                        <div class="group">
-                            <div class="fixed-width">Country:</div>
-                            <div id="userCountry"></div>
-                        </div>
-                        <div class="group">
-                            <div class="fixed-width">ZIP:</div>
-                            <div id="userZIP"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="cancel-button-regular" class="cancel-button">
-                      <div class="cancel-button-text"><%= i18n.__("Cancel") %></div>
-                </div>
-
-                <div id="cancel-button-vpn" class="cancel-button">
-                    <div class="cancel-button-text"><%= i18n.__("Cancel and use VPN") %></div>
-                </div>
-
-            </div>
 
             <div class="seed_status">
                 <!-- downloading info -->
@@ -78,11 +37,10 @@
                     <span class="loading-info-text" id="ractpr"><%= i18n.__("Active Peers") %>:&nbsp;</span>
                     <span class="value_peers value">0</span><span id="rbreak3"><br></span>
                     <span class="loading-info-text"><%= i18n.__("Filename") %>:&nbsp;</span>
-                    <span class="open-button tooltipped" data-toggle="tooltip" data-placement="bottom" title="<%= i18n.__("Cache Folder") %>"><i class="fa fa-folder-open"></i></span>
-                    <span class="text_filename value tooltipped copytoclip" data-copy="file name" data-toggle="tooltip" data-placement="bottom" title="<%= i18n.__("Right click to copy") %>"></span><br>
+                    <span class="text_filename value tooltipped copytoclip" data-copy="filename" data-toggle="tooltip" data-placement="bottom"></span><br>
                     <span class="loading-info-text"><%= i18n.__("Stream Url") %>:&nbsp;</span>
-                    <span class="text_streamurl value tooltipped copytoclip" data-copy="stream url" data-toggle="tooltip" data-placement="bottom" title="<%= i18n.__("Right click to copy") %>"></span><br>
-                    <div class="fa fa-angle-down show-pcontrols tooltipped" data-toggle="tooltip" data-placement="bottom" title="<%= i18n.__("Show playback controls") %>"></div>
+                    <span class="text_streamurl value tooltipped copytoclip" data-copy="stream url" data-toggle="tooltip" data-placement="bottom"></span><br>
+                    <div class="fa fa-caret-down show-pcontrols tooltipped" data-toggle="tooltip" data-placement="bottom" title="<%= i18n.__("Show playback controls") %>"></div>
                     <div class="player-controls">
                         <i class="fa fa-backward backward"></i>
                         <i class="fa fa-pause pause"></i>
@@ -95,7 +53,7 @@
                 </div>
             </div>
 
-            <div id="cancel-button" class="cancel-button">
+            <div id="cancel-button" class="cancel-button button">
                 <div class="cancel-button-text"><%= i18n.__("Cancel") %></div>
             </div>
         </div>
